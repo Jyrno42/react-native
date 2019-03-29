@@ -111,13 +111,14 @@ public class LocationModule extends ReactContextBaseJavaModule {
 
   /**
    * Get the current position. This can return almost immediately if the location is cached or
-   * request an update, which might take a while.
+   * request an update, which might take a while. This method also requests location
+   * permissions on API level 23 and above when needed.
    *
    * @param options map containing optional arguments: timeout (millis), maximumAge (millis) and
    *        highAccuracy (boolean)
    */
   @ReactMethod
-  public void getCurrentPosition(
+  public void getCurrentPositionAndRequestPermissions(
       final ReadableMap options,
       final Callback success,
       final Callback error) {
@@ -129,7 +130,7 @@ public class LocationModule extends ReactContextBaseJavaModule {
         public void invoke(Object... args) {
           String result = (String) args[0];
           if (result == "granted") {
-            loadCurrentPosition(options, success, error);
+            getCurrentPosition(options, success, error);
           } else {
             error.invoke(PositionError.buildError(PositionError.PERMISSION_DENIED, "Location permission was not granted."));
           }
@@ -158,7 +159,7 @@ public class LocationModule extends ReactContextBaseJavaModule {
           if (!hasPermission) {
             perms.requestPermission(Manifest.permission.ACCESS_FINE_LOCATION, new PromiseImpl(onPermissionGranted, onPermissionDenied));
           } else {
-            loadCurrentPosition(options, success, error);
+            getCurrentPosition(options, success, error);
           }
         }
       };
@@ -167,10 +168,21 @@ public class LocationModule extends ReactContextBaseJavaModule {
       return;
     }
 
-    loadCurrentPosition(options, success, error);
+    getCurrentPosition(options, success, error);
   }
 
-  private void loadCurrentPosition(
+  /**
+   * Get the current position. This can return almost immediately if the location is cached or
+   * request an update, which might take a while.
+   *
+   *  This is the legacy version of this function which does not deal with permissions. It is
+   *  retained only for backwards compatibility. see discussion in PR #22843
+   *
+   * @param options map containing optional arguments: timeout (millis), maximumAge (millis) and
+   *        highAccuracy (boolean)
+   */
+  @ReactMethod
+  private void getCurrentPosition(
       ReadableMap options,
       final Callback success,
       Callback error) {
